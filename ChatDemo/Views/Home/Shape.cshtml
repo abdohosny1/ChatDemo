@@ -1,0 +1,44 @@
+﻿@{
+    ViewData["Title"] = "Shape Page";
+}
+
+<div id="shape" style="position: absolute; width: 100px; height: 100px; background-color: blue;"></div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/5.0.6/signalr.min.js"></script>
+<script>
+    const connection = new signalR.HubConnectionBuilder()
+        .withUrl("/shapeHub")
+        .build();
+
+
+
+    connection.start().catch(err => console.error(err));
+
+    document.getElementById("shape").addEventListener("mousedown", function (event) {
+        let offsetX = event.clientX - parseInt(window.getComputedStyle(document.getElementById("shape")).left);
+        let offsetY = event.clientY - parseInt(window.getComputedStyle(document.getElementById("shape")).top);
+
+        function moveShape(event) {
+            let x = event.clientX - offsetX;
+            let y = event.clientY - offsetY;
+
+            document.getElementById("shape").style.left = x + "px";
+            document.getElementById("shape").style.top = y + "px";
+
+            connection.invoke("MoveShape", x, y).catch(err => console.error(err));
+        }
+
+        function stopMoving() {
+            window.removeEventListener("mousemove", moveShape);
+            window.removeEventListener("mouseup", stopMoving);
+        }
+
+        window.addEventListener("mousemove", moveShape);
+        window.addEventListener("mouseup", stopMoving);
+    });
+
+    connection.on("ShapeMoved", (x, y) => {
+        document.getElementById("shape").style.left = x + "px";
+        document.getElementById("shape").style.top = y + "px";
+    });
+</script>

@@ -1,0 +1,116 @@
+﻿@{
+    ViewData["Title"] = "Home Page";
+}
+
+<div>
+    <input type="text" id="userInput" placeholder="Enter your name" />
+    <input type="text" id="messageInput" placeholder="Enter your message" />
+    <button id="sendButton">Send</button>
+
+    <br />
+    <br />
+    <br />
+
+    <input type="text" id="gtext" placeholder="Enter your Group Name" />
+    <input type="button" id="join" value="Join"/>
+    <input type="button" id="bt_sendGroup" value="Send To Group" />
+
+</div>
+<hr />
+<ul id="messages"></ul>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/5.0.8/signalr.min.js"></script>
+<script type="text/javascript">
+
+    function HandelSendToGroup(){
+
+        document.getElementById("bt_sendGroup").addEventListener("click", function (event) {
+            var name = document.getElementById("userInput").value;
+            var gname = document.getElementById("gtext").value;
+            var message = document.getElementById("messageInput").value;
+
+            // Alert when a message is sent
+            connection.invoke("SendToGroup", gname, name, message).then(function () {
+
+            }).catch(function (err) {
+                return console.error(err.toString());
+            });
+            event.preventDefault();
+        });
+
+        //define subscribe method
+        connection.on("SendGroup", function (name, gname, message) {
+            var msg = name + " ( " + gname + " )" + " : " + message
+            var li = document.createElement("li");
+            li.textContent = msg;
+            document.getElementById("messages").appendChild(li);
+        });  
+    }
+    function HandelReceiveMessage(){
+
+        document.getElementById("sendButton").addEventListener("click", function (event) {
+            var user = document.getElementById("userInput").value;
+            var message = document.getElementById("messageInput").value;
+
+            // Alert when a message is sent
+            connection.invoke("SendMessage", user, message).then(function () {
+                alert("Message sent successfully!");
+            }).catch(function (err) {
+                return console.error(err.toString());
+            });
+            event.preventDefault();
+        });
+
+
+        //define subscribe method
+        connection.on("ReceiveMessage", function (user, message) {
+            var msg = user + ": " + message;
+            var li = document.createElement("li");
+            li.textContent = msg;
+            document.getElementById("messages").appendChild(li);
+        });
+
+    }
+
+    function HandelnewMember(){
+        //define subscribe method
+        connection.on("newMember", function (user,gname) {
+            var msg = user + " joinned   " + gname;
+            var li = document.createElement("li");
+            li.textContent = msg;
+            document.getElementById("messages").appendChild(li);
+        });
+
+        document.getElementById("join").addEventListener("click", function (event) {
+            var user = document.getElementById("userInput").value;
+            var gname = document.getElementById("gtext").value;
+
+            // Alert when a message is sent
+            connection.invoke("JoinGroup", gname, user).then(function () {
+               
+            }).catch(function (err) {
+                return console.error(err.toString());
+            });
+            event.preventDefault();
+        });
+    }
+    document.addEventListener("DOMContentLoaded", function () {
+        //define connection
+
+         connection = new signalR.HubConnectionBuilder().withUrl("/chatHub").build();
+
+        // Alert when the connection starts
+        //start connection
+        connection.start().then(function () {
+            alert("Connection established successfully!");
+        }).catch(function (err) {
+            return console.error(err.toString());
+        });
+
+
+       HandelReceiveMessage();
+       HandelnewMember();
+       HandelSendToGroup();
+    });
+</script>
+
